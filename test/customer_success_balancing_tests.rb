@@ -68,21 +68,48 @@ class CustomerSuccessBalancingTests < Minitest::Test
   end
 
 
-  def test_should_remove_unavailable_cs
-    balancer = CustomerSuccessBalancing.new(
-      build_scores([100, 99]),
-      build_scores([10, 10, 10, 20, 20, 30, 30, 30, 20, 60]),
-      [1]
-    )
-    assert_equal [{:id=>1, :score=>100}], balancer.revome_unavailable_cs
+  def test_should_revome_unavailable_costomer_success
+    customer_success = build_scores([100, 99])
+    customers = build_scores([10, 10, 10, 20, 20, 30, 30, 30, 20, 60])
+    balancer = CustomerSuccessBalancing.new(customer_success, customers, [2])
+    balancer.revome_unavailable_customer_success
+
+    assert_equal [{:id=>1, :score=>100}], balancer.customer_success
   end
 
   def test_should_sort_array
-    balancer = CustomerSuccessBalancing.new(build_scores([1]), build_scores([1]), [])
-    sorted = balancer.sort build_scores([1,5,7,3,6,9,5,3])
-    p sorted
-    assert_equal 3, sorted[2][:score]
-    assert_equal 9, sorted[7][:score]
+    balancer = CustomerSuccessBalancing.new(build_scores([1,5,7,3,6,9,5,3]), build_scores([]), [1])
+    balancer.sort_customer_success
+    assert_equal 3, balancer.customer_success[2][:score]
+    assert_equal 9, balancer.customer_success[7][:score]
+  end
+
+  def test_should_group_customers_with_one_customer_success
+    expected_result = [{id: 2, score: 20}, {id: 4, score: 10}, {id: 5, score: 30}]
+    customers = build_scores([80,20,50,10,30,60])
+    balancer = CustomerSuccessBalancing.new(build_scores([1,5,7,3,6,9,5,3]), customers, [1])
+    group = balancer.group_customers(40)
+    assert_equal expected_result, group
+  end
+
+  def test_should_return_empty_in_group_customers
+    expected_result = []
+    customers = build_scores([80,50,60])
+    balancer = CustomerSuccessBalancing.new(build_scores([1,5,7,3,6,9,5,3]), customers, [1])
+    group = balancer.group_customers(40)
+    assert_equal expected_result, group
+  end
+
+  def test_should_group_customers_with_each_customer_success
+    expected_result = [
+      {cs_id: 1, customers: [{id: 2, score: 20}, {id: 4, score: 10}, {id: 5, score: 30}]},
+      {cs_id: 2, customers: [{id: 3, score: 50}, {id: 6, score: 60}]}
+    ]
+    customer_success = build_scores([40, 70])
+    customers = build_scores([80,20,50,10,30,60])
+    balancer = CustomerSuccessBalancing.new(customer_success, customers, [1])
+    group = balancer.group_customers_with_customer_success
+    assert_equal expected_result, group
   end
 
   private
