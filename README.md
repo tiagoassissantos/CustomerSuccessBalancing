@@ -1,4 +1,5 @@
 # Ruby
+Versão: 3.0.2
 
 ## Como rodar os testes
 
