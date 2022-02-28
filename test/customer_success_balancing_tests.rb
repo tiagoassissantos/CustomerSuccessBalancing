@@ -85,31 +85,82 @@ class CustomerSuccessBalancingTests < Minitest::Test
   end
 
   def test_should_group_customers_with_one_customer_success
-    expected_result = [{id: 2, score: 20}, {id: 4, score: 10}, {id: 5, score: 30}]
-    customers = build_scores([80,20,50,10,30,60])
-    balancer = CustomerSuccessBalancing.new(build_scores([1,5,7,3,6,9,5,3]), customers, [1])
-    group = balancer.group_customers(40)
-    assert_equal expected_result, group
+    balancer = create_balancer
+    customer_qty = balancer.group_and_count_customers(40)
+    assert_equal 3, customer_qty
   end
 
   def test_should_return_empty_in_group_customers
-    expected_result = []
-    customers = build_scores([80,50,60])
-    balancer = CustomerSuccessBalancing.new(build_scores([1,5,7,3,6,9,5,3]), customers, [1])
-    group = balancer.group_customers(40)
-    assert_equal expected_result, group
+    balancer = create_balancer
+    customer_qty = balancer.group_and_count_customers(9)
+    assert_equal 0, customer_qty
   end
 
   def test_should_group_customers_with_each_customer_success
     expected_result = [
-      {cs_id: 1, customers: [{id: 2, score: 20}, {id: 4, score: 10}, {id: 5, score: 30}]},
-      {cs_id: 2, customers: [{id: 3, score: 50}, {id: 6, score: 60}]}
+      {cs_id: 1, customers_qty: 3},
+      {cs_id: 2, customers_qty: 2}
     ]
-    customer_success = build_scores([40, 70])
-    customers = build_scores([80,20,50,10,30,60])
-    balancer = CustomerSuccessBalancing.new(customer_success, customers, [1])
+    balancer = create_balancer
     group = balancer.group_customers_with_customer_success
     assert_equal expected_result, group
+  end
+
+  def test_should_sort_by_customers_qty_reverse
+    cs_with_customers_qty = [ {cs_id: 2, customers_qty: 2}, {cs_id: 1, customers_qty: 3} ]
+    expected_result = [ {cs_id: 1, customers_qty: 3}, {cs_id: 2, customers_qty: 2} ]
+    balancer = create_balancer
+
+    sorted = balancer.sort_by_customers_qty_reverse cs_with_customers_qty
+    assert_equal expected_result, sorted
+  end
+
+  def test_should_get_customer_success_with_more_customers_scenario_one
+    cs_with_customers_qty = [ {cs_id: 1, customers_qty: 3}, {cs_id: 2, customers_qty: 2} ]
+    balancer = create_balancer
+
+    result = balancer.get_customer_success_with_more_customers cs_with_customers_qty
+    assert_equal 1, result.length
+  end
+
+  def test_should_get_customer_success_with_more_customers_scenario_two
+    cs_with_customers_qty = [ {cs_id: 1, customers_qty: 3}, {cs_id: 2, customers_qty: 3} ]
+    balancer = create_balancer
+
+    result = balancer.get_customer_success_with_more_customers cs_with_customers_qty
+    assert_equal 2, result.length
+  end
+
+  def test_should_get_customer_success_with_more_customers_scenario_three
+    cs_with_customers_qty = []
+    balancer = create_balancer
+
+    result = balancer.get_customer_success_with_more_customers cs_with_customers_qty
+    assert_equal 0, result.length
+  end
+
+  def test_should_get_customer_success_with_more_customers_scenario_four
+    cs_with_customers_qty = [ {cs_id: 2, customers_qty: 3} ]
+    balancer = create_balancer
+
+    result = balancer.get_customer_success_with_more_customers cs_with_customers_qty
+    assert_equal 1, result.length
+  end
+
+  def test_should_get_customer_succes_id_with_more_customers_scenario_one
+    cs_with_customers_qty = [ {cs_id: 2, customers_qty: 3} ]
+    balancer = create_balancer
+
+    result = balancer.get_customer_succes_id_with_more_customers cs_with_customers_qty
+    assert_equal 2, result
+  end
+
+  def test_should_get_customer_succes_id_with_more_customers_scenario_two
+    cs_with_customers_qty = [ {cs_id: 2, customers_qty: 3}, {cs_id: 1, customers_qty: 3} ]
+    balancer = create_balancer
+
+    result = balancer.get_customer_succes_id_with_more_customers cs_with_customers_qty
+    assert_equal 0, result
   end
 
   private
@@ -118,5 +169,11 @@ class CustomerSuccessBalancingTests < Minitest::Test
     scores.map.with_index do |score, index|
       { id: index + 1, score: score }
     end
+  end
+
+  def create_balancer
+    customer_success = build_scores([40, 70])
+    customers = build_scores([80,20,50,10,30,60])
+    balancer = CustomerSuccessBalancing.new(customer_success, customers, [1])
   end
 end
