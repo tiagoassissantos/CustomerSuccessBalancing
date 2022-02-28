@@ -13,8 +13,10 @@ class CustomerSuccessBalancing
   end
 
   def revome_unavailable_cs
-    @customer_success.select { |cs|
-      @away_customer_success.include? cs[:id]
-    }
+    @customer_success.select { |cs| @away_customer_success.include? cs[:id] }
+  end
+
+  def sort(array)
+    array.sort_by { |value| value[:score] }
   end
 end

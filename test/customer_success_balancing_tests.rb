@@ -75,7 +75,14 @@ class CustomerSuccessBalancingTests < Minitest::Test
       [1]
     )
     assert_equal [{:id=>1, :score=>100}], balancer.revome_unavailable_cs
-    p balancer
+  end
+
+  def test_should_sort_array
+    balancer = CustomerSuccessBalancing.new(build_scores([1]), build_scores([1]), [])
+    sorted = balancer.sort build_scores([1,5,7,3,6,9,5,3])
+    p sorted
+    assert_equal 3, sorted[2][:score]
+    assert_equal 9, sorted[7][:score]
   end
 
   private
